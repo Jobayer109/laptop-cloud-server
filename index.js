@@ -9,6 +9,21 @@ app.use(express.json());
 
 // Mongodb database connection
 
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.yj6ddzb.mongodb.net/?retryWrites=true&w=majority`;
+const client = new MongoClient(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverApi: ServerApiVersion.v1,
+});
+
+const dbConnect = async () => {
+  try {
+  } finally {
+  }
+};
+dbConnect().catch((error) => console.log(error.message));
+
 app.get("/", (req, res) => {
   res.send("Laptop cloud server is running");
 });
