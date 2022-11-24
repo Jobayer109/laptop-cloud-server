@@ -20,10 +20,28 @@ const client = new MongoClient(uri, {
 const dbConnect = async () => {
   try {
     const categoriesCollection = client.db("laptop-cloud").collection("categories");
+    const laptopsCollection = client.db("laptop-cloud").collection("laptops");
+    const bookingsCollection = client.db("laptop-cloud").collection("bookings");
 
+    // All categories api
     app.get("/categories", async (req, res) => {
       const categories = await categoriesCollection.find({}).toArray();
       res.send(categories);
+    });
+
+    app.get("/category/:id", async (req, res) => {
+      const id = req.params.id;
+      const laptops = await laptopsCollection.find({}).toArray();
+
+      const filtered = laptops.filter((laptop) => laptop.category_id === id);
+      res.send(filtered);
+    });
+
+    // submitted Bookings by customer.
+    app.post("/bookings", async (req, res) => {
+      const booking = req.body;
+      const bookings = await bookingsCollection.insertOne(booking);
+      res.send(bookings);
     });
   } finally {
   }
