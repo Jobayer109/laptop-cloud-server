@@ -19,6 +19,12 @@ const client = new MongoClient(uri, {
 
 const dbConnect = async () => {
   try {
+    const categoriesCollection = client.db("laptop-cloud").collection("categories");
+
+    app.get("/categories", async (req, res) => {
+      const categories = await categoriesCollection.find({}).toArray();
+      res.send(categories);
+    });
   } finally {
   }
 };
