@@ -43,6 +43,12 @@ const dbConnect = async () => {
       const bookings = await bookingsCollection.insertOne(booking);
       res.send(bookings);
     });
+
+    // My orders api
+    app.get("/myOrders", async (req, res) => {
+      const orders = await bookingsCollection.find({}).toArray();
+      res.send(orders);
+    });
   } finally {
   }
 };
