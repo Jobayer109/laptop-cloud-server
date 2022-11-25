@@ -26,6 +26,7 @@ const dbConnect = async () => {
     const laptopsCollection = client.db("laptop-cloud").collection("laptops");
     const bookingsCollection = client.db("laptop-cloud").collection("bookings");
     const paymentsCollection = client.db("laptop-cloud").collection("payments");
+    const productsCollection = client.db("laptop-cloud").collection("products");
 
     // All categories api
     app.get("/categories", async (req, res) => {
@@ -35,7 +36,7 @@ const dbConnect = async () => {
 
     app.get("/category/:id", async (req, res) => {
       const id = req.params.id;
-      const laptops = await laptopsCollection.find({}).toArray();
+      const laptops = await productsCollection.find({}).toArray();
 
       const filtered = laptops.filter((laptop) => laptop.category_id === id);
       res.send(filtered);
@@ -59,6 +60,13 @@ const dbConnect = async () => {
       const query = { _id: ObjectId(id) };
       const result = await bookingsCollection.findOne(query);
       res.send(result);
+    });
+
+    // Add product by seller api
+    app.post("/products", async (req, res) => {
+      const product = req.body;
+      const products = await productsCollection.insertOne(product);
+      res.send(products);
     });
 
     // Create payment intent
