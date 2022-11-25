@@ -27,6 +27,7 @@ const dbConnect = async () => {
     const bookingsCollection = client.db("laptop-cloud").collection("bookings");
     const paymentsCollection = client.db("laptop-cloud").collection("payments");
     const productsCollection = client.db("laptop-cloud").collection("products");
+    const usersCollection = client.db("laptop-cloud").collection("users");
 
     // All categories api
     app.get("/categories", async (req, res) => {
@@ -97,6 +98,12 @@ const dbConnect = async () => {
         },
       };
       const updateResult = await bookingsCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const result = await usersCollection.insertOne(user);
       res.send(result);
     });
   } finally {
