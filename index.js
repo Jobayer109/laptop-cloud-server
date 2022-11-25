@@ -3,13 +3,16 @@ const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 5000;
 require("dotenv").config();
+const stripe = require("stripe")(
+  "sk_test_51M6ARNB16mRcRBwtghZDWVXEnZ7buzkqGsONphwXADjLW0cCmhFuzf75i8DGnQK8UFkozJEwg6VsZAGGhI837rQT00bJX0iEf6"
+);
 
 app.use(cors());
 app.use(express.json());
 
 // Mongodb database connection
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.yj6ddzb.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
@@ -22,6 +25,7 @@ const dbConnect = async () => {
     const categoriesCollection = client.db("laptop-cloud").collection("categories");
     const laptopsCollection = client.db("laptop-cloud").collection("laptops");
     const bookingsCollection = client.db("laptop-cloud").collection("bookings");
+    const paymentsCollection = client.db("laptop-cloud").collection("payments");
 
     // All categories api
     app.get("/categories", async (req, res) => {
@@ -48,6 +52,44 @@ const dbConnect = async () => {
     app.get("/myOrders", async (req, res) => {
       const orders = await bookingsCollection.find({}).toArray();
       res.send(orders);
+    });
+
+    app.get("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await bookingsCollection.findOne(query);
+      res.send(result);
+    });
+
+    // Create payment intent
+    app.post("/create-payment-intent", async (req, res) => {
+      const booking = req.body;
+      const price = booking.price;
+      const amount = price * 100;
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    // Payment info api
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
+      const result = await paymentsCollection.insertOne(payment);
+      const query = { _id: ObjectId(payment.bookingId) };
+      const updateDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+        },
+      };
+      const updateResult = await bookingsCollection.updateOne(query, updateDoc);
+      res.send(result);
     });
   } finally {
   }
