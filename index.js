@@ -52,7 +52,8 @@ const dbConnect = async () => {
 
     // My orders api
     app.get("/myOrders", async (req, res) => {
-      const orders = await bookingsCollection.find({}).toArray();
+      const query = { email: req.query.email };
+      const orders = await bookingsCollection.find(query).toArray();
       res.send(orders);
     });
 
@@ -68,6 +69,20 @@ const dbConnect = async () => {
       const product = req.body;
       const products = await productsCollection.insertOne(product);
       res.send(products);
+    });
+
+    // Seller products api
+    app.get("/myProducts", async (req, res) => {
+      const query = { email: req.query.email };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // Delete seller's product.
+    app.delete("/myProducts/:id", async (req, res) => {
+      const query = { _id: ObjectId(req.params.id) };
+      const result = await productsCollection.deleteOne(query);
+      res.send(result);
     });
 
     // Create payment intent
