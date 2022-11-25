@@ -23,7 +23,7 @@ const client = new MongoClient(uri, {
 const dbConnect = async () => {
   try {
     const categoriesCollection = client.db("laptop-cloud").collection("categories");
-    const laptopsCollection = client.db("laptop-cloud").collection("laptops");
+    // const laptopsCollection = client.db("laptop-cloud").collection("laptops");
     const bookingsCollection = client.db("laptop-cloud").collection("bookings");
     const paymentsCollection = client.db("laptop-cloud").collection("payments");
     const productsCollection = client.db("laptop-cloud").collection("products");
@@ -116,10 +116,44 @@ const dbConnect = async () => {
       res.send(result);
     });
 
+    // Registered users api
     app.post("/users", async (req, res) => {
       const user = req.body;
       const result = await usersCollection.insertOne(user);
       res.send(result);
+    });
+
+    // Users display api
+    app.get("/users", async (req, res) => {
+      const result = await usersCollection.find({}).toArray();
+      res.send(result);
+    });
+
+    // User delete by admin
+    app.delete("/users/:id", async (req, res) => {
+      const query = { _id: ObjectId(req.params.id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // Admin making API
+    app.put("/users/admin/:id", async (req, res) => {
+      const filter = { _id: ObjectId(req.params.id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          role: "admin",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
+    });
+
+    // Admin verify API
+    app.get("/users/admin/:email", async (req, res) => {
+      const query = { email: req.params.email };
+      const user = await usersCollection.findOne(query);
+      res.send({ isAdmin: user?.role === "admin" });
     });
   } finally {
   }
