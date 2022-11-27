@@ -46,6 +46,7 @@ const dbConnect = async () => {
     const paymentsCollection = client.db("laptop-cloud").collection("payments");
     const productsCollection = client.db("laptop-cloud").collection("products");
     const usersCollection = client.db("laptop-cloud").collection("users");
+    const wishlistsCollection = client.db("laptop-cloud").collection("wishlists");
 
     // JWT api
     app.get("/jwt", async (req, res) => {
@@ -65,6 +66,8 @@ const dbConnect = async () => {
       res.send(categories);
     });
 
+    // Display items by categories
+
     app.get("/category/:id", async (req, res) => {
       const id = req.params.id;
       const laptops = await productsCollection.find({}).toArray();
@@ -73,6 +76,21 @@ const dbConnect = async () => {
       res.send(filtered);
     });
 
+    // wishlist collection api
+    // app.get("/wishlist/:id", async (req, res) => {
+    //   const wish = req.body._id;
+    //   const query = { _id: ObjectId(req.params.id) };
+    //   const collections = await productsCollection.find(query).toArray();
+
+    //   if (
+    //     collections.filter((collection) => {
+    //       collection.id === wish;
+    //     })
+    //   ) {
+    //     return res.send(collections);
+    //   }
+    // });
+
     // submitted Bookings by customer.
     app.post("/bookings", async (req, res) => {
       const booking = req.body;
@@ -80,7 +98,7 @@ const dbConnect = async () => {
       res.send(bookings);
     });
 
-    // My orders api
+    // My personal orders api
     app.get("/myOrders", verifyJWT, async (req, res) => {
       const decodedEmail = req.decoded.email;
       const query = { email: req.query.email };
@@ -120,13 +138,22 @@ const dbConnect = async () => {
       const payment = req.body;
       const result = await paymentsCollection.insertOne(payment);
       const query = { _id: ObjectId(payment.bookingId) };
+      const query1 = { _id: ObjectId(payment.bookingId) };
       const updateDoc = {
         $set: {
           paid: true,
           transactionId: payment.transactionId,
         },
       };
+      const updateDocs = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+        },
+      };
+
       const updateResult = await bookingsCollection.updateOne(query, updateDoc);
+      const productPaid = await productsCollection.updateOne(query1, updateDocs);
       res.send(result);
     });
 
@@ -138,7 +165,10 @@ const dbConnect = async () => {
     });
 
     // Seller products api
-    app.get("/myProducts", async (req, res) => {
+    app.get("/myProducts", verifyJWT, async (req, res) => {
+      if (req.decoded.email !== req.query.email) {
+        return res.status(401).send("unauthorized access");
+      }
       const query = { email: req.query.email };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
@@ -148,6 +178,40 @@ const dbConnect = async () => {
     app.delete("/myProducts/:id", async (req, res) => {
       const query = { _id: ObjectId(req.params.id) };
       const result = await productsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // Advertise seller's products
+    app.put("/products/:id", async (req, res) => {
+      const filter = { _id: ObjectId(req.params.id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          ads: "advertise",
+        },
+      };
+      const products = await productsCollection.updateOne(filter, updateDoc, options);
+
+      res.send(products);
+    });
+
+    // Products payment status
+    app.put("/paid", async (req, res) => {
+      const filter = { bookingId: req.query.bookingId };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          paid: true,
+        },
+      };
+      const result = await productsCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
+    });
+
+    // Display advertised product
+    app.get("/advertise", async (req, res) => {
+      const query = {};
+      const result = await productsCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -185,18 +249,53 @@ const dbConnect = async () => {
     });
 
     // Admin verify API
-    app.get("/users/admin/:email", async (req, res) => {
+    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
+      if (req.decoded.email !== req.params.email) {
+        return res.status(401).send("unauthorized access");
+      }
+
       const query = { email: req.params.email };
       const user = await usersCollection.findOne(query);
       res.send({ isAdmin: user?.role === "admin" });
     });
 
     // Seller verify API
-    app.get("/users/seller/:email", async (req, res) => {
+    app.get("/users/seller/:email", verifyJWT, async (req, res) => {
+      if (req.decoded.email !== req.params.email) {
+        return res.status(401).send("unauthorized access");
+      }
       const query = { email: req.params.email };
       const user = await usersCollection.findOne(query);
       res.send({ isSeller: user?.role === "seller" });
     });
+
+    // Sellers collection
+    app.get("/sellers", async (req, res) => {
+      const result = await usersCollection.find({}).toArray();
+      res.send(result);
+    });
+
+    //Verify sellers api
+    app.put("/sellers/:email", async (req, res) => {
+      const filter = { email: req.params.email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          verified: true,
+        },
+      };
+      const result = await productsCollection.updateMany(filter, updateDoc, options);
+      const updateResult = await usersCollection.updateMany(filter, updateDoc, options);
+      res.send(result);
+    });
+
+    // app.get("/verified", async (req, res) => {
+    //   const query = {};
+    //   const result = await productsCollection
+    //     .find(query)
+    //     .toArray();
+    //   res.send(result);
+    // });
   } finally {
   }
 };
