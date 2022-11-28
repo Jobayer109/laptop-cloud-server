@@ -50,14 +50,14 @@ const dbConnect = async () => {
 
     // JWT api
     app.get("/jwt", async (req, res) => {
-      const query = { email: req.query.email };
+      const email = req.query.email;
+      const query = { email: email };
       const user = await usersCollection.findOne(query);
-      // console.log(user);
-      if (user) {
+      if (!user) {
+        res.status(403).send("Forbidden Access");
+      } else {
         const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "10d" });
         res.send({ token });
-      } else {
-        res.status(403).send("Forbidden Access");
       }
     });
 
@@ -76,21 +76,6 @@ const dbConnect = async () => {
       const filtered = laptops.filter((laptop) => laptop.category_id === id);
       res.send(filtered);
     });
-
-    // wishlist collection api
-    // app.get("/wishlist/:id", async (req, res) => {
-    //   const wish = req.body._id;
-    //   const query = { _id: ObjectId(req.params.id) };
-    //   const collections = await productsCollection.find(query).toArray();
-
-    //   if (
-    //     collections.filter((collection) => {
-    //       collection.id === wish;
-    //     })
-    //   ) {
-    //     return res.send(collections);
-    //   }
-    // });
 
     // submitted Bookings by customer.
     app.post("/bookings", async (req, res) => {
