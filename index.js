@@ -52,7 +52,7 @@ const dbConnect = async () => {
     app.get("/jwt", async (req, res) => {
       const query = { email: req.query.email };
       const user = await usersCollection.findOne(query);
-      console.log(user);
+      // console.log(user);
       if (user) {
         const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "10d" });
         res.send({ token });
@@ -246,10 +246,6 @@ const dbConnect = async () => {
 
     // Admin verify API
     app.get("/users/admin/:email", async (req, res) => {
-      // if (req.decoded.email !== req.params.email) {
-      //   return res.status(401).send("unauthorized access");
-      // }
-
       const query = { email: req.params.email };
       const user = await usersCollection.findOne(query);
       res.send({ isAdmin: user?.role === "admin" });
@@ -257,9 +253,6 @@ const dbConnect = async () => {
 
     // Seller verify API
     app.get("/users/seller/:email", async (req, res) => {
-      // if (req.decoded.email !== req.params.email) {
-      //   return res.status(401).send("unauthorized access");
-      // }
       const query = { email: req.params.email };
       const user = await usersCollection.findOne(query);
       res.send({ isSeller: user?.role === "seller" });
@@ -283,6 +276,12 @@ const dbConnect = async () => {
       const result = await productsCollection.updateMany(filter, updateDoc, options);
       const updateResult = await usersCollection.updateMany(filter, updateDoc, options);
       res.send(result);
+
+      // Wishlist API
+      // app.post("/wishlist", async (req, res) => {
+      //   const wish = req.body;
+      //   console.log(wish);
+      // });
     });
   } finally {
   }
