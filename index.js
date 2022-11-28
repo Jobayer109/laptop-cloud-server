@@ -52,6 +52,7 @@ const dbConnect = async () => {
     app.get("/jwt", async (req, res) => {
       const query = { email: req.query.email };
       const user = await usersCollection.findOne(query);
+      console.log(user);
       if (user) {
         const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "10d" });
         res.send({ token });
@@ -94,7 +95,14 @@ const dbConnect = async () => {
     // submitted Bookings by customer.
     app.post("/bookings", async (req, res) => {
       const booking = req.body;
+      const query = { _id: ObjectId(booking.bookingId) };
+      const updateDoc = {
+        $set: {
+          paid: true,
+        },
+      };
       const bookings = await bookingsCollection.insertOne(booking);
+      const result = await productsCollection.updateOne(query, updateDoc);
       res.send(bookings);
     });
 
@@ -108,6 +116,13 @@ const dbConnect = async () => {
       }
       const orders = await bookingsCollection.find(query).toArray();
       res.send(orders);
+    });
+
+    // Delete my orders
+    app.delete("/deleteOrder/:id", async (req, res) => {
+      const query = { _id: ObjectId(req.params.id) };
+      const result = await bookingsCollection.deleteOne(query);
+      res.send(result);
     });
 
     app.get("/orders/:id", async (req, res) => {
@@ -138,14 +153,8 @@ const dbConnect = async () => {
       const payment = req.body;
       const result = await paymentsCollection.insertOne(payment);
       const query = { _id: ObjectId(payment.bookingId) };
-      const query1 = { _id: ObjectId(payment.bookingId) };
+
       const updateDoc = {
-        $set: {
-          paid: true,
-          transactionId: payment.transactionId,
-        },
-      };
-      const updateDocs = {
         $set: {
           paid: true,
           transactionId: payment.transactionId,
@@ -153,7 +162,7 @@ const dbConnect = async () => {
       };
 
       const updateResult = await bookingsCollection.updateOne(query, updateDoc);
-      const productPaid = await productsCollection.updateOne(query1, updateDocs);
+
       res.send(result);
     });
 
@@ -165,10 +174,10 @@ const dbConnect = async () => {
     });
 
     // Seller products api
-    app.get("/myProducts", verifyJWT, async (req, res) => {
-      if (req.decoded.email !== req.query.email) {
-        return res.status(401).send("unauthorized access");
-      }
+    app.get("/myProducts", async (req, res) => {
+      // if (req.decoded.email !== req.query.email) {
+      //   return res.status(401).send("unauthorized access");
+      // }
       const query = { email: req.query.email };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
@@ -193,19 +202,6 @@ const dbConnect = async () => {
       const products = await productsCollection.updateOne(filter, updateDoc, options);
 
       res.send(products);
-    });
-
-    // Products payment status
-    app.put("/paid", async (req, res) => {
-      const filter = { bookingId: req.query.bookingId };
-      const options = { upsert: true };
-      const updateDoc = {
-        $set: {
-          paid: true,
-        },
-      };
-      const result = await productsCollection.updateOne(filter, updateDoc, options);
-      res.send(result);
     });
 
     // Display advertised product
@@ -249,10 +245,10 @@ const dbConnect = async () => {
     });
 
     // Admin verify API
-    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
-      if (req.decoded.email !== req.params.email) {
-        return res.status(401).send("unauthorized access");
-      }
+    app.get("/users/admin/:email", async (req, res) => {
+      // if (req.decoded.email !== req.params.email) {
+      //   return res.status(401).send("unauthorized access");
+      // }
 
       const query = { email: req.params.email };
       const user = await usersCollection.findOne(query);
@@ -260,10 +256,10 @@ const dbConnect = async () => {
     });
 
     // Seller verify API
-    app.get("/users/seller/:email", verifyJWT, async (req, res) => {
-      if (req.decoded.email !== req.params.email) {
-        return res.status(401).send("unauthorized access");
-      }
+    app.get("/users/seller/:email", async (req, res) => {
+      // if (req.decoded.email !== req.params.email) {
+      //   return res.status(401).send("unauthorized access");
+      // }
       const query = { email: req.params.email };
       const user = await usersCollection.findOne(query);
       res.send({ isSeller: user?.role === "seller" });
@@ -288,14 +284,6 @@ const dbConnect = async () => {
       const updateResult = await usersCollection.updateMany(filter, updateDoc, options);
       res.send(result);
     });
-
-    // app.get("/verified", async (req, res) => {
-    //   const query = {};
-    //   const result = await productsCollection
-    //     .find(query)
-    //     .toArray();
-    //   res.send(result);
-    // });
   } finally {
   }
 };
