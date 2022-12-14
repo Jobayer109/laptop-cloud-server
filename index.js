@@ -160,11 +160,15 @@ const dbConnect = async () => {
 
     // Seller products api
     app.get("/myProducts", async (req, res) => {
-      // if (req.decoded.email !== req.query.email) {
-      //   return res.status(401).send("unauthorized access");
-      // }
       const query = { email: req.query.email };
       const result = await productsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get("/laptop/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await productsCollection.findOne(query);
       res.send(result);
     });
 
