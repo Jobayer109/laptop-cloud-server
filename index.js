@@ -29,13 +29,17 @@ const verifyJWT = (req, res, next) => {
   }
   const token = authHeader.split(" ")[1];
 
-  jwt.verify(token, process.env.JWT_SECRET, function (error, decoded) {
-    if (error) {
-      return res.status(403).send("Forbidden access");
+  jwt.verify(
+    token,
+    "95f260786f29927d840f89de7a3135f6e4b89f41661f5ea1b00aa668a86fb443dbbbdbb87d0ab9732b4567e20600363c38039f3ead32d16b8fba7d647957d3a3",
+    function (error, decoded) {
+      if (error) {
+        return res.status(403).send("Forbidden access");
+      }
+      req.decoded = decoded;
+      next();
     }
-    req.decoded = decoded;
-    next();
-  });
+  );
 };
 
 const dbConnect = async () => {
@@ -51,13 +55,18 @@ const dbConnect = async () => {
     // JWT api
     app.get("/jwt", async (req, res) => {
       const email = req.query.email;
-      const query = { email: email };
+      const query = { email };
       const user = await usersCollection.findOne(query);
+      console.log(user);
       if (!user) {
-        res.status(403).send("Forbidden Access");
+        return res.status(403).send("Forbidden Access");
       } else {
-        const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "10d" });
-        res.send({ token });
+        const token = jwt.sign(
+          user,
+          "95f260786f29927d840f89de7a3135f6e4b89f41661f5ea1b00aa668a86fb443dbbbdbb87d0ab9732b4567e20600363c38039f3ead32d16b8fba7d647957d3a3",
+          { expiresIn: "10d" }
+        );
+        res.send({ isToken: token, status: true });
       }
     });
 
