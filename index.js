@@ -23,7 +23,7 @@ const client = new MongoClient(uri, {
 
 const verifyJWT = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  console.log("authHeader", authHeader);
+  // console.log("authHeader", authHeader);
   if (!authHeader) {
     return res.status(401).send("unauthorized access");
   }
@@ -95,7 +95,7 @@ const dbConnect = async () => {
     // My personal orders api
     app.get("/myOrders", verifyJWT, async (req, res) => {
       const decodedEmail = req.decoded.email;
-      console.log(decodedEmail);
+      // console.log(decodedEmail);
       const query = { email: req.query.email };
 
       if (req.query.email !== decodedEmail) {
