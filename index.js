@@ -58,15 +58,11 @@ const dbConnect = async () => {
       const query = { email };
       const user = await usersCollection.findOne(query);
       console.log(user);
-      if (!user) {
-        return res.status(403).send("Forbidden Access");
+      if (user) {
+        const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        return res.send({ token });
       } else {
-        const token = jwt.sign(
-          user,
-          "95f260786f29927d840f89de7a3135f6e4b89f41661f5ea1b00aa668a86fb443dbbbdbb87d0ab9732b4567e20600363c38039f3ead32d16b8fba7d647957d3a3",
-          { expiresIn: "10d" }
-        );
-        res.send({ isToken: token, status: true });
+        return res.status(403).send("Forbidden Access");
       }
     });
 
