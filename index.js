@@ -23,23 +23,19 @@ const client = new MongoClient(uri, {
 
 const verifyJWT = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  // console.log(authHeader);
+  console.log("authHeader", authHeader);
   if (!authHeader) {
     return res.status(401).send("unauthorized access");
   }
   const token = authHeader.split(" ")[1];
 
-  jwt.verify(
-    token,
-    "95f260786f29927d840f89de7a3135f6e4b89f41661f5ea1b00aa668a86fb443dbbbdbb87d0ab9732b4567e20600363c38039f3ead32d16b8fba7d647957d3a3",
-    function (error, decoded) {
-      if (error) {
-        return res.status(403).send("Forbidden access");
-      }
-      req.decoded = decoded;
-      next();
+  jwt.verify(token, process.env.JWT_SECRET, function (error, decoded) {
+    if (error) {
+      return res.status(403).send("Forbidden access");
     }
-  );
+    req.decoded = decoded;
+    next();
+  });
 };
 
 const dbConnect = async () => {
@@ -59,7 +55,7 @@ const dbConnect = async () => {
       const user = await usersCollection.findOne(query);
       console.log(user);
       if (user) {
-        const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "7d" });
         return res.send({ token });
       } else {
         return res.status(403).send("Forbidden Access");
@@ -99,6 +95,7 @@ const dbConnect = async () => {
     // My personal orders api
     app.get("/myOrders", verifyJWT, async (req, res) => {
       const decodedEmail = req.decoded.email;
+      console.log(decodedEmail);
       const query = { email: req.query.email };
 
       if (req.query.email !== decodedEmail) {
